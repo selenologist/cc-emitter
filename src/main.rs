@@ -21,6 +21,12 @@ struct Opts {
     #[structopt(short = "v", long = "verbose")]
     verbose: bool,
 
+    /// List ports and their names, then exit. Due to programmer laziness, you also have to supply
+    /// a dummy data value to make the argument parser work correctly. Anything will do, e.g.
+    /// `cc-emitter -l a`
+    #[structopt(short = "l", long = "list")]
+    list_ports: bool,
+
     /// MIDI CC data to send, in the following format:
     ///
     /// (<CC>:<Value>[^:0-9]*)+
@@ -116,6 +122,18 @@ fn main() {
             .expect("Failed to open MIDI output");
 
     let mut output = make_output();
+
+    // if the list_ports flag is set, list ports then exit
+    if opts.list_ports {
+        for port in 0..output.port_count() {
+            match output.port_name(port) {
+                Ok(name) => println!("Port #{}: \"{}\"", port, name),
+                Err(e)   => eprintln!("Failed to get port #{} name: {:?}.",
+                                      port, e)
+            }
+        }
+        return;
+    }
 
     // connect to each available port, filtering by name if specified
     //
